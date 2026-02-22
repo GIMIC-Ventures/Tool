@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GIMIC Agent Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#08080F;--surface:#0E0E1A;--surface2:#13131F;
+    --border:#1C1C2E;--text:#C8C8D8;--muted:#454560;
+    --c1:#00FF94;--c2:#FF6B35;--c3:#7B61FF;--c4:#FFD93D;--c5:#FF4D8B;
+  }
+  html,body{height:100%;font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);overflow:hidden}
+  ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#222;border-radius:2px}
+
+  /* Layout */
+  #app{display:flex;height:100vh}
+  #sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  #main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+  /* Sidebar */
+  .sidebar-header{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+  .logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px;color:#fff}
+  .logo span{color:var(--c3)}
+  .logo-sub{font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;text-transform:uppercase}
+  .nav{flex:1;overflow-y:auto;padding:12px 10px}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;margin-bottom:4px;border:1px solid transparent}
+  .nav-item:hover{background:var(--surface2);border-color:var(--border)}
+  .nav-item.active{border-color:var(--active-color,#333)}
+  .nav-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .nav-label{font-size:12px;font-weight:500;color:#aaa;line-height:1.3}
+  .nav-item.active .nav-label{color:#fff}
+
+  /* API Key area */
+  .api-section{padding:14px;border-top:1px solid var(--border)}
+  .api-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+  .api-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:#888;font-size:11px;font-family:inherit;outline:none;transition:border 0.2s}
+  .api-input:focus{border-color:#333;color:#ccc}
+  .api-hint{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5}
+  .api-hint a{color:var(--c3);text-decoration:none}
+
+  /* Chat area */
+  #chat-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;background:var(--bg);flex-shrink:0}
+  .agent-badge{padding:4px 12px;border-radius:20px;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:500}
+  .header-desc{font-size:12px;color:var(--muted);flex:1}
+
+  #messages{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+  .empty-state{margin:auto;text-align:center;max-width:380px;animation:fadeUp 0.5s ease}
+  .empty-icon{font-size:52px;margin-bottom:20px}
+  .empty-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:8px}
+  .empty-desc{font-size:12px;color:var(--muted);line-height:1.8}
+  .empty-tips{margin-top:20px;display:flex;flex-direction:column;gap:8px;text-align:left}
+  .tip{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:#666;cursor:pointer;transition:all 0.2s}
+  .tip:hover{border-color:#333;color:#aaa}
+
+  .msg{display:flex;flex-direction:column;max-width:82%;animation:fadeUp 0.3s ease}
+  .msg.user{align-self:flex-end;align-items:flex-end}
+  .msg.assistant{align-self:flex-start;align-items:flex-start}
+  .msg-bubble{padding:12px 16px;border-radius:14px;font-size:13px;line-height:1.75}
+  .msg.user .msg-bubble{background:var(--surface2);border:1px solid var(--border);color:#ddd;border-radius:14px 14px 4px 14px}
+  .msg.assistant .msg-bubble{background:var(--surface);border:1px solid var(--border);color:#bbb;border-radius:14px 14px 14px 4px}
+  .msg-bubble strong{color:#eee}
+  .msg-bubble .md-h{display:block;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#eee;margin:10px 0 4px}
+  .msg-bubble .md-h:first-child{margin-top:0}
+  .msg-bubble code{background:#0A0A18;border:1px solid var(--border);padding:1px 6px;border-radius:4px;font-size:12px;color:#aaa}
+  .msg-bubble hr{border:none;border-top:1px solid var(--border);margin:10px 0}
+
+  /* Email module special */
+  .email-tag{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;margin:3px}
+  .email-tag button{background:none;border:none;color:#555;cursor:pointer;font-size:12px;padding:0;line-height:1}
+  .email-tag button:hover{color:#ff4d4d}
+  .email-input-row{display:flex;gap:8px;margin-top:8px}
+  .email-add-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:#ccc;font-size:12px;font-family:inherit;outline:none}
+  .email-add-input:focus{border-color:#555}
+  .email-add-btn{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:#aaa;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s}
+  .email-add-btn:hover{border-color:#555;color:#fff}
+  .email-tags-area{min-height:36px;margin-bottom:4px;flex-wrap:wrap;display:flex}
+
+  /* Input bar */
+  #input-bar{padding:16px 24px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+  .input-row{display:flex;gap:10px;align-items:flex-end}
+  #msg-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;color:#ccc;font-size:13px;font-family:inherit;resize:none;outline:none;transition:border 0.2s;max-height:120px;min-height:44px;line-height:1.5}
+  #msg-input:focus{border-color:#333}
+  #send-btn{width:44px;height:44px;border-radius:12px;border:none;font-size:18px;cursor:pointer;transition:all 0.2s;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .input-hint{font-size:10px;color:#222;margin-top:6px;text-align:right}
+
+  /* Typing dots */
+  .typing{display:flex;gap:5px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;align-self:flex-start;align-items:center}
+  .dot{width:7px;height:7px;border-radius:50%;animation:pulse 1.2s ease infinite}
+
+  /* Welcome screen */
+  #welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px;animation:fadeUp 0.5s ease}
+  .welcome-logo{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;letter-spacing:-2px;color:#fff;margin-bottom:8px}
+  .welcome-logo span{color:var(--c3)}
+  .welcome-sub{font-size:13px;color:var(--muted);margin-bottom:48px;letter-spacing:1px}
+  .cards-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:600px;width:100%}
+  @media(max-width:500px){.cards-grid{grid-template-columns:1fr}}
+  .welcome-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all 0.25s;text-align:left}
+  .welcome-card:hover{transform:translateY(-3px);border-color:#333}
+  .wc-icon{font-size:28px;margin-bottom:10px}
+  .wc-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;margin-bottom:4px}
+  .wc-desc{font-size:11px;color:var(--muted);line-height:1.6}
+
+  /* BG grid */
+  .bg-grid{position:fixed;inset:0;pointer-events:none;opacity:0.025;background-image:linear-gradient(#7B61FF 1px,transparent 1px),linear-gradient(90deg,#7B61FF 1px,transparent 1px);background-size:50px 50px;z-index:0}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div id="app" style="position:relative;z-index:1">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">GIMIC <span>Hub</span></div>
+      <div class="logo-sub">AI Agent Platform</div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="api-section">
+      <div class="api-label">Claude API Key</div>
+      <input class="api-input" id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off"/>
+      <div class="api-hint">
+        Kostenlos holen: <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br/>
+        Der Key bleibt nur in deinem Browser.
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="view-welcome">
+      <div id="welcome">
+        <div class="welcome-logo">GIMIC <span>Hub</span></div>
+        <div class="welcome-sub">KI-Agenten für Venture Capital · Wähle einen Agenten links</div>
+        <div class="cards-grid" id="welcome-cards"></div>
+      </div>
+    </div>
+
+    <div id="view-chat" style="display:none;flex-direction:column;height:100%">
+      <div id="chat-header">
+        <span id="h-icon" style="font-size:24px"></span>
+        <div>
+          <div id="h-badge" class="agent-badge"></div>
+        </div>
+        <div id="h-desc" class="header-desc"></div>
+      </div>
+      <div id="messages"></div>
+      <!-- Email module (hidden by default) -->
+      <div id="email-module" style="display:none;padding:12px 24px 0;border-top:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Empfänger E-Mails</div>
+        <div class="email-tags-area" id="email-tags"></div>
+        <div class="email-input-row">
+          <input class="email-add-input" id="email-add-input" type="email" placeholder="email@startup.com"/>
+          <button class="email-add-btn" onclick="addEmail()">+ Hinzufügen</button>
+        </div>
+      </div>
+      <div id="input-bar">
+        <div class="input-row">
+          <textarea id="msg-input" rows="1" placeholder="Nachricht eingeben..."></textarea>
+          <button id="send-btn" onclick="sendMessage()">↑</button>
+        </div>
+        <div class="input-hint">Enter senden · Shift+Enter Zeilenumbruch</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const AGENTS = [
+  {
+    id:"dealflow", label:"Deal-Flow Analyse", icon:"⚡", color:"#00FF94",
+    desc:"Priorisiere Startups mit KI-gesteuerter Analyse",
+    tips:["Analysiere 'Fintech Startup, €2M ARR, 3x YoY Growth, B2B SaaS'","Bewerte Deal: 'SaaS HR-Tool, Seed Stage, 15 Kunden, €500K MRR'","Vergleiche zwei Startups: ClimaTech vs. AgriTech"],
+    system:`Du bist ein erfahrener VC-Deal-Flow-Analyst. Analysiere Startups präzise und strukturiert.
+Erstelle immer:
+1. **Executive Summary** (2-3 Sätze)
+2. **Marktpotenzial** (TAM/SAM/SOM Einschätzung)  
+3. **Wettbewerbslandschaft** (Hauptkonkurrenten, Differenzierung)
+4. **Team-Bewertung** (Gründer-Fit, Expertise)
+5. **Risikofaktoren** (Top 3)
+6. **Investment-Score** (1-10) mit Begründung
+7. **Empfehlung**: Pass / Watch / Deep Dive
+Sei präzise, datengetrieben und direkt.`
+  },
+  {
+    id:"valuation", label:"Startup-Bewertung", icon:"📊", color:"#FF6B35",
+    desc:"Due Diligence & Valuation mit VC-Standards",
+    tips:["Bewerte: 'B2B SaaS, €1.5M ARR, 120% NRR, 18 Monate Runway'","Pre-Money Valuation für Serie-A Fintech Startup","Unit Economics Check: CAC €2.400, LTV €14.000, 6 Monate Payback"],
+    system:`Du bist ein Senior VC Partner für Startup-Bewertungen und Due Diligence.
+Führe strukturierte Bewertungen durch:
+**I. Valuation Analysis** — Pre/Post-Money, Comparables, Revenue Multiple
+**II. Unit Economics** — LTV/CAC, Payback, Burn Rate & Runway  
+**III. Due Diligence** — PMF Score, Wachstumsmetriken, Risiken
+**IV. Investment Thesis** — Bull/Bear Case, Key Milestones
+**V. Term Sheet Empfehlung** — Bewertungsrahmen, wichtige Klauseln
+Nutze VC-Branchenstandards und sei analytisch.`
+  },
+  {
+    id:"portfolio", label:"Portfolio-Monitoring", icon:"📈", color:"#7B61FF",
+    desc:"Portfolio Health Reports & Exit-Strategien",
+    tips:["Portfolio Update: 'Company A: €3M ARR (+40% QoQ), 14 Monate Runway'","Red Flag Check für underperformendes Portfolio-Unternehmen","Exit-Readiness Assessment für Serie-B SaaS Company"],
+    system:`Du bist Portfolio-Manager bei einem führenden VC-Fonds.
+Erstelle strukturierte Portfolio-Reports:
+**Portfolio Health Report**
+1. Performance-Übersicht (Top/Bottom Performer)
+2. KPI-Tracking (MoM/QoQ Wachstum, Burn, Runway)
+3. Risikoanalyse (🔴 Red Flags, 🟡 Yellow Flags, 🟢 Positiv)
+4. Follow-On Empfehlungen (Pro-Rata, ROFR ausüben?)
+5. Exit-Potenzial (M&A Kandidaten, IPO Readiness)
+6. Priorisierte Handlungsempfehlungen
+Format für LP-Reporting geeignet.`
+  },
+  {
+    id:"pitchdeck", label:"Pitch-Deck Analyse", icon:"🎯", color:"#FFD93D",
+    desc:"Slide-by-Slide Bewertung mit Deal-Breaker Check",
+    tips:["Analysiere: Problem Slide zeigt €50B Markt, aber kein Bottoms-up Beweis","Bewerte Team Slide: 2 Ex-Googler, 1 Serial Founder, kein Sales-Profil","Feedback zur Traction Slide: 200 Kunden, €800K ARR, 15% monthly Churn"],
+    system:`Du bist ein erfahrener VC-Partner der täglich Pitch Decks bewertet.
+Analysiere Pitch Decks strukturiert:
+🔴 **Deal-Breaker** (sofortige Ablehnung)
+🟡 **Schwächen** (Verbesserungsbedarf)  
+🟢 **Stärken** (überzeugende Elemente)
+**Slide-Bewertung:**
+- Problem: Klar & groß genug?
+- Solution: Elegant & skalierbar?
+- Market: TAM realistic? Bottoms-up?
+- Business Model: Unit Economics vorhanden?
+- Traction: Beweis für PMF?
+- Team: Credibility & Unfair Advantage?
+- Ask: Valuation gerechtfertigt? Use of Funds klar?
+**Overall Score /10 + Empfehlung**`
+  },
+  {
+    id:"financials", label:"Financial & Datenraum", icon:"🗂️", color:"#FF4D8B",
+    desc:"Excel, Finanzen & Datenraum-Prüfung",
+    tips:["Prüfe P&L: Umsatz €2M, COGS 45%, OpEx €1.8M, EBITDA-negativ","Cap Table Check: 3 Gründer 60%, Angel 15%, Seed Fund 25%","Datenraum Checklist: Was fehlt noch vor dem Investment?"],
+    system:`Du bist ein erfahrener VC-Financial Analyst und Due-Diligence-Experte für Datenräume.
+Analysiere Finanzdaten und Datenräume:
+**Financial Analysis**
+- P&L Review: Umsatzqualität, Margenentwicklung, EBITDA-Brücke
+- Balance Sheet: Cash-Position, Working Capital, Schulden
+- Cash Flow: Burn Rate, Runway-Berechnung, Cash Conversion
+- Unit Economics: Contribution Margin, LTV/CAC, Payback
+**Cap Table & Struktur**
+- Gründer-Anteile & Dilution
+- Option Pool, ESOP-Planung
+- Liquidation Preferences, Anti-Dilution Klauseln
+**Datenraum-Prüfung**
+- Vollständigkeits-Check (was fehlt?)
+- Red Flags in Verträgen/KPIs
+- Qualität der Finanzdokumentation
+- Vorbereitung für Abschluss-Audit
+Sei detailliert, zahlengetrieben und zeige konkrete Formeln wenn nötig.`
+  },
+  {
+    id:"outreach", label:"E-Mail Outreach", icon:"✉️", color:"#00CFFF",
+    desc:"Startups anschreiben — E-Mails hinzufügen & versenden",
+    tips:["Schreibe Erstkontakt-Mail an ein FinTech Startup nach deren Pitch","Follow-Up Mail nach erstem Meeting: Interesse bestätigen, nächste Schritte","Absage-Mail professionell & wertschätzend formulieren"],
+    system:`Du bist ein erfahrener VC-Partner der professionelle Outreach-Mails schreibt.
+Verfasse präzise, professionelle E-Mails für VC-Investor-Kommunikation.
+Für jede Mail-Anfrage erstelle:
+**Betreff:** [prägnant, personalisiert]
+**Anrede:** [professionell, personalisiert]
+**Hauptteil:** [kurz, klar, Mehrwert für den Empfänger im Vordergrund]
+**Call-to-Action:** [konkret und eindeutig]
+**Abschluss:** [professionell]
+Stil: Direkt, respektvoll, auf Augenhöhe. Kein Marketing-Sprech.
+Wenn E-Mail-Adressen angegeben wurden, weise explizit darauf hin, dass die Mail an diese Adressen gesendet werden soll und zeige am Ende: "MAILTO: [adressen]"`,
+    hasEmail: true
+  }
+];
+
+let currentAgent = null;
+let messages = [];
+let emails = [];
+let loading = false;
+
+// Build nav
+const nav = document.getElementById('nav');
+const welcomeCards = document.getElementById('welcome-cards');
+
+AGENTS.forEach(agent => {
+  // Nav item
+  const item = document.createElement('div');
+  item.className = 'nav-item';
+  item.id = 'nav-' + agent.id;
+  item.style.setProperty('--active-color', agent.color + '44');
+  item.innerHTML = `
+    <div class="nav-icon" style="background:${agent.color}15;border:1px solid ${agent.color}30">${agent.icon}</div>
+    <div class="nav-label">${agent.label}</div>
+  `;
+  item.onclick = () => openAgent(agent);
+  nav.appendChild(item);
+
+  // Welcome card
+  const card = document.createElement('div');
+  card.className = 'welcome-card';
+  card.style.borderColor = agent.color + '22';
+  card.innerHTML = `
+    <div class="wc-icon">${agent.icon}</div>
+    <div class="wc-title" style="color:${agent.color}">${agent.label}</div>
+    <div class="wc-desc">${agent.desc}</div>
+  `;
+  card.onmouseenter = () => card.style.borderColor = agent.color + '66';
+  card.onmouseleave = () => card.style.borderColor = agent.color + '22';
+  card.onclick = () => openAgent(agent);
+  welcomeCards.appendChild(card);
+});
+
+function openAgent(agent) {
+  currentAgent = agent;
+  messages = [];
+  emails = [];
+
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + agent.id).classList.add('active');
+
+  // Switch views
+  document.getElementById('view-welcome').style.display = 'none';
+  const chatView = document.getElementById('view-chat');
+  chatView.style.display = 'flex';
+
+  // Update header
+  document.getElementById('h-icon').textContent = agent.icon;
+  const badge = document.getElementById('h-badge');
+  badge.textContent = agent.label;
+  badge.style.background = agent.color + '18';
+  badge.style.color = agent.color;
+  badge.style.border = `1px solid ${agent.color}33`;
+  document.getElementById('h-desc').textContent = agent.desc;
+
+  // Email module
+  const emailMod = document.getElementById('email-module');
+  emailMod.style.display = agent.hasEmail ? 'block' : 'none';
+  document.getElementById('email-tags').innerHTML = '';
+
+  // Send button color
+  const btn = document.getElementById('send-btn');
+  btn.style.background = agent.color;
+  btn.style.color = '#000';
+
+  // Placeholder
+  document.getElementById('msg-input').placeholder = agent.tips?.[0] || 'Nachricht eingeben...';
+
+  // Messages
+  const msgsEl = document.getElementById('messages');
+  msgsEl.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.className = 'empty-state';
+  empty.innerHTML = `
+    <div class="empty-icon">${agent.icon}</div>
+    <div class="empty-title" style="color:${agent.color}">${agent.label}</div>
+    <div class="empty-desc">${agent.desc}</div>
+    ${agent.tips ? `<div class="empty-tips">${agent.tips.map(t => `<div class="tip" onclick="useTip(this)">${t}</div>`).join('')}</div>` : ''}
+  `;
+  msgsEl.appendChild(empty);
+}
+
+function useTip(el) {
+  document.getElementById('msg-input').value = el.textContent;
+  sendMessage();
+}
+
+// Email management
+function addEmail() {
+  const input = document.getElementById('email-add-input');
+  const val = input.value.trim();
+  if (!val || !val.includes('@')) return;
+  if (emails.includes(val)) { input.value=''; return; }
+  emails.push(val);
+  renderEmailTags();
+  input.value = '';
+}
+
+document.getElementById('email-add-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addEmail(); }
+});
+
+function removeEmail(email) {
+  emails = emails.filter(e => e !== email);
+  renderEmailTags();
+}
+
+function renderEmailTags() {
+  const area = document.getElementById('email-tags');
+  area.innerHTML = emails.map(e => `
+    <span class="email-tag">
+      ${e}
+      <button onclick="removeEmail('${e}')">×</button>
+    </span>
+  `).join('');
+}
+
+// Chat
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  let text = input.value.trim();
+  if (!text || loading || !currentAgent) return;
+
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    alert('Bitte zuerst deinen Claude API Key eingeben (links unten).\n\nKostenlos holen: console.anthropic.com');
+    return;
+  }
+
+  // Append email context if outreach agent
+  if (currentAgent.hasEmail && emails.length > 0) {
+    text += `\n\n[Empfänger E-Mails: ${emails.join(', ')}]`;
+  }
+
+  input.value = '';
+  input.style.height = 'auto';
+  loading = true;
+
+  // Clear empty state
+  const msgsEl = document.getElementById('messages');
+  const empty = msgsEl.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  // User message
+  messages.push({ role: 'user', content: text });
+  appendMessage('user', text.replace(/\[Empfänger E-Mails:.*\]/, '').trim());
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.id = 'typing';
+  typing.innerHTML = [0,1,2].map(i => `<div class="dot" style="background:${currentAgent.color};animation-delay:${i*0.2}s"></div>`).join('');
+  msgsEl.appendChild(typing);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: currentAgent.system,
+        messages: messages
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.map(b => b.text||'').join('') || (data.error ? '⚠️ API Fehler: ' + data.error.message : '⚠️ Keine Antwort erhalten.');
+    messages.push({ role: 'assistant', content: reply });
+
+    // Check for mailto in outreach
+    if (currentAgent.hasEmail && emails.length > 0 && reply.includes('MAILTO:')) {
+      const subject = encodeURIComponent('Investment Interest - GIMIC Capital');
+      const body = encodeURIComponent(reply.replace(/MAILTO:.*/, '').trim());
+      const mailto = `mailto:${emails.join(',')}?subject=${subject}&body=${body}`;
+      setTimeout(() => {
+        if (confirm('E-Mail-Client öffnen und Mail an ' + emails.join(', ') + ' senden?')) {
+          window.open(mailto);
+        }
+      }, 500);
+    }
+
+    typing.remove();
+    appendMessage('assistant', reply);
+  } catch(e) {
+    typing.remove();
+    appendMessage('assistant', '⚠️ Verbindungsfehler. Prüfe deinen API Key und die Internetverbindung.\n\nFehler: ' + e.message);
+  }
+  loading = false;
+}
+
+function appendMessage(role, text) {
+  const msgsEl = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+
+  // Parse markdown-ish
+  const html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^#{1,3} (.+)$/gm,'<span class="md-h">$1</span>')
+    .replace(/^---$/gm,'<hr/>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/\n/g,'<br/>');
+
+  bubble.innerHTML = html;
+  div.appendChild(bubble);
+  msgsEl.appendChild(div);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+// Input auto-resize & enter
+const msgInput = document.getElementById('msg-input');
+msgInput.addEventListener('input', () => {
+  msgInput.style.height = 'auto';
+  msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+});
+msgInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// Save API key
+document.getElementById('apiKey').addEventListener('input', e => {
+  localStorage.setItem('gimic_api_key', e.target.value);
+});
+const saved = localStorage.getItem('gimic_api_key');
+if (saved) document.getElementById('apiKey').value = saved;
+</script>
+</body>
+</html>

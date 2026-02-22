@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GIMIC Agent Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070710;--s1:#0C0C1A;--s2:#101020;--s3:#141428;
+  --b1:#1A1A32;--b2:#222240;--text:#B8B8D0;--dim:#404060;
+  --c1:#00FF94;--c2:#FF6B35;--c3:#7B61FF;--c4:#FFD93D;--c5:#FF4D8B;--c6:#00D4FF;
+  --red:#FF4D4D;--green:#00FF94;--yellow:#FFD93D;
+}
+html,body{height:100%;font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);overflow:hidden;font-size:13px}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--b2)}
+button,input,textarea,select{font-family:inherit;font-size:inherit}
+
+/* ── LAYOUT ── */
+#shell{display:flex;height:100vh}
+#sidebar{width:220px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column}
+#content{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── SIDEBAR ── */
+.logo{padding:20px 16px 12px;border-bottom:1px solid var(--b1)}
+.logo-name{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.5px}
+.logo-name em{color:var(--c3);font-style:normal}
+.logo-sub{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.nav-section{padding:10px 8px 4px}
+.nav-label{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;padding:0 8px;margin-bottom:4px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;border:none;background:none;color:#707090;width:100%;text-align:left;transition:all 0.15s;font-size:11px}
+.nav-btn:hover{background:var(--s2);color:#aaa}
+.nav-btn.active{background:var(--s3);color:#ddd;border:1px solid var(--b2)}
+.nav-btn .ni{width:18px;text-align:center;font-size:14px}
+.sidebar-spacer{flex:1}
+.api-area{padding:12px;border-top:1px solid var(--b1)}
+.api-lbl{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.api-inp{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:6px 9px;color:#888;font-size:10px;outline:none}
+.api-inp:focus{border-color:var(--b2);color:#bbb}
+.api-link{font-size:9px;color:#2A2A50;margin-top:4px}
+.api-link a{color:var(--c3);text-decoration:none}
+
+/* ── TOPBAR ── */
+#topbar{padding:0 20px;height:48px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--b1);flex-shrink:0;background:var(--bg)}
+.tb-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff}
+.tb-sub{font-size:10px;color:var(--dim)}
+.tb-spacer{flex:1}
+.btn{padding:6px 14px;border-radius:7px;border:1px solid var(--b1);background:var(--s2);color:#999;cursor:pointer;font-size:11px;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{border-color:var(--b2);color:#ccc}
+.btn.primary{background:var(--c3);border-color:var(--c3);color:#fff;font-weight:600}
+.btn.primary:hover{opacity:0.85}
+.btn.danger{border-color:#FF4D4D33;color:#FF4D4D}
+
+/* ── VIEWS ── */
+.view{display:none;flex:1;overflow:hidden;flex-direction:column}
+.view.active{display:flex}
+
+/* ── DASHBOARD ── */
+#v-dash .dash-body{flex:1;overflow-y:auto;padding:20px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px 16px}
+.kpi-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff}
+.kpi-lbl{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
+.kpi-delta{font-size:10px;margin-top:4px}
+.section-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sh-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#ddd}
+.sh-count{font-size:9px;color:var(--dim);padding:2px 7px;background:var(--s2);border-radius:10px}
+.pipeline-cols{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.pcol{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:10px}
+.pcol-head{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.pcol-count{background:var(--s2);border-radius:10px;padding:1px 6px;font-size:10px}
+.pcard{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:all 0.15s}
+.pcard:hover{border-color:var(--b2)}
+.pcard-name{font-size:11px;color:#ccc;font-weight:500;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard-meta{font-size:9px;color:var(--dim)}
+.score-badge{display:inline-block;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:600;margin-left:4px}
+
+/* ── STARTUP DATABASE ── */
+#v-db .db-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.db-toolbar{padding:12px 20px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.search-inp{flex:1;max-width:300px;background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:7px 12px;color:#bbb;outline:none}
+.search-inp:focus{border-color:var(--b2)}
+.filter-sel{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:6px 10px;color:#888;outline:none;cursor:pointer}
+.table-wrap{flex:1;overflow-y:auto;padding:0 20px 20px}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+thead th{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--b1);position:sticky;top:0;background:var(--bg);z-index:1}
+tbody tr{border-bottom:1px solid var(--b1);cursor:pointer;transition:background 0.12s}
+tbody tr:hover{background:var(--s1)}
+tbody td{padding:9px 10px;font-size:11px;color:#aaa;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.name-cell{color:#ddd;font-weight:500}
+.stage-pill{padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;letter-spacing:0.5px}
+.link-icon{color:var(--c6);text-decoration:none;font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid #00D4FF22;transition:all 0.15s}
+.link-icon:hover{background:#00D4FF11;border-color:#00D4FF44}
+
+/* ── STARTUP DETAIL PANEL ── */
+#detail-panel{width:420px;flex-shrink:0;background:var(--s1);border-left:1px solid var(--b1);display:none;flex-direction:column;overflow:hidden}
+#detail-panel.open{display:flex}
+.dp-header{padding:16px 18px 12px;border-bottom:1px solid var(--b1);display:flex;align-items:flex-start;gap:10px}
+.dp-close{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;padding:2px 6px;margin-left:auto}
+.dp-close:hover{color:#aaa}
+.dp-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#fff}
+.dp-sector{font-size:10px;color:var(--dim);margin-top:2px}
+.dp-tabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
+.dp-tab{flex:1;padding:9px;text-align:center;font-size:10px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s}
+.dp-tab.active{color:#ddd;border-bottom-color:var(--c3)}
+.dp-body{flex:1;overflow-y:auto;padding:16px 18px}
+
+/* ── MEMO ── */
+.memo-box{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 14px;font-size:11px;line-height:1.8;color:#aaa;white-space:pre-wrap;max-height:300px;overflow-y:auto}
+.memo-box strong{color:#ddd}
+
+/* ── AGENTS ── */
+#v-agents{flex-direction:row}
+.agent-sidebar{width:200px;flex-shrink:0;border-right:1px solid var(--b1);overflow-y:auto;padding:10px 8px}
+.agent-btn{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all 0.15s;margin-bottom:3px}
+.agent-btn:hover{background:var(--s2)}
+.agent-btn.active{background:var(--s3);border:1px solid var(--b2)}
+.agent-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.agent-name{font-size:11px;color:#888}
+.agent-btn.active .agent-name{color:#ccc}
+.agent-chat{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-header{padding:12px 18px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ch-badge{padding:3px 9px;border-radius:10px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase}
+#messages{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.msg{display:flex;flex-direction:column;max-width:85%;animation:fup 0.2s ease}
+.msg.user{align-self:flex-end}
+.msg.bot{align-self:flex-start}
+.bubble{padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.75}
+.msg.user .bubble{background:var(--s3);border:1px solid var(--b2);color:#ccc;border-radius:10px 10px 3px 10px}
+.msg.bot .bubble{background:var(--s1);border:1px solid var(--b1);color:#aaa;border-radius:10px 10px 10px 3px}
+.bubble strong,.bubble b{color:#e0e0f0}
+.md-h{display:block;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#ddd;margin:6px 0 2px}
+.md-h:first-child{margin-top:0}
+.chat-input-area{padding:12px 18px;border-top:1px solid var(--b1);flex-shrink:0}
+.ci-row{display:flex;gap:8px;align-items:flex-end}
+#msg-input{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:9px 13px;color:#bbb;resize:none;outline:none;max-height:100px;min-height:38px;line-height:1.5;transition:border 0.15s}
+#msg-input:focus{border-color:var(--b2)}
+#send-btn{width:38px;height:38px;border-radius:9px;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;font-weight:700}
+.typing-dots{display:flex;gap:4px;padding:10px 14px;background:var(--s1);border:1px solid var(--b1);border-radius:10px 10px 10px 3px;align-self:flex-start}
+.td{width:6px;height:6px;border-radius:50%;animation:pulse 1.2s ease infinite}
+.empty-chat{margin:auto;text-align:center;padding:30px;max-width:360px}
+.ec-icon{font-size:36px;margin-bottom:10px}
+.ec-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#ddd;margin-bottom:6px}
+.ec-desc{font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:16px}
+.tip-chips{display:flex;flex-direction:column;gap:5px;text-align:left}
+.tip-chip{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:7px 11px;font-size:10px;color:#555;cursor:pointer;transition:all 0.15s;line-height:1.5}
+.tip-chip:hover{border-color:var(--b2);color:#999}
+
+/* ── ADD STARTUP MODAL ── */
+#modal-overlay{position:fixed;inset:0;background:#000000AA;z-index:100;display:none;align-items:center;justify-content:center}
+#modal-overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:14px;width:580px;max-height:90vh;overflow-y:auto;padding:24px}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff;margin-bottom:18px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-lbl{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase}
+.form-inp{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:8px 11px;color:#bbb;outline:none;width:100%;transition:border 0.15s}
+.form-inp:focus{border-color:var(--b2)}
+select.form-inp{cursor:pointer}
+textarea.form-inp{resize:vertical;min-height:70px;line-height:1.6}
+.form-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+/* ── MISC ── */
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.blue{color:var(--c6)}.purple{color:var(--c3)}
+.tag{display:inline-block;padding:2px 7px;border-radius:5px;font-size:9px}
+.badge-pass{background:#FF4D4D18;color:#FF4D4D;border:1px solid #FF4D4D33}
+.badge-watch{background:#FFD93D18;color:#FFD93D;border:1px solid #FFD93D33}
+.badge-dive{background:#7B61FF18;color:#7B61FF;border:1px solid #7B61FF33}
+.badge-invest{background:#00FF9418;color:#00FF94;border:1px solid #00FF9433}
+.badge-portfolio{background:#00D4FF18;color:#00D4FF;border:1px solid #00D4FF33}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-box{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 12px}
+.stat-val{font-size:17px;font-weight:700;color:#ddd;font-family:'Syne',sans-serif}
+.stat-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.divider{border:none;border-top:1px solid var(--b1);margin:12px 0}
+.activity-item{padding:8px 0;border-bottom:1px solid var(--b1);display:flex;gap:8px;align-items:flex-start}
+.act-dot{width:6px;height:6px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.act-text{font-size:10px;color:#888;line-height:1.5}
+.act-time{font-size:9px;color:var(--dim);margin-left:auto;white-space:nowrap}
+.progress-bar{height:3px;background:var(--s3);border-radius:2px;overflow:hidden;margin-top:4px}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.5s}
+.bg-grd{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.02;background-image:linear-gradient(#7B61FF 1px,transparent 1px),linear-gradient(90deg,#7B61FF 1px,transparent 1px);background-size:40px 40px}
+@keyframes fup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:0.2;transform:scale(0.75)}50%{opacity:1;transform:scale(1)}}
+
+/* ── WORKFLOW ── */
+#v-workflow .wf-body{flex:1;overflow-y:auto;padding:20px}
+.wf-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:flex-start;gap:14px}
+.wf-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.wf-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#ddd;margin-bottom:4px}
+.wf-desc{font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:10px}
+.wf-run{padding:6px 14px;border-radius:7px;border:none;font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.15s;font-weight:600}
+
+/* settings view */
+#v-settings .set-body{flex:1;overflow-y:auto;padding:20px}
+.set-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.set-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#ddd;margin-bottom:10px}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b1);font-size:11px;color:#888}
+.set-row:last-child{border:none}
+textarea.set-area{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:10px;color:#aaa;font-size:11px;resize:vertical;min-height:90px;outline:none;line-height:1.6}
+.set-hint{font-size:10px;color:var(--dim);margin-top:5px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="bg-grd"></div>
+<div id="shell" style="position:relative;z-index:1">
+
+<!-- ══ SIDEBAR ══ -->
+<div id="sidebar">
+  <div class="logo">
+    <div class="logo-name">GIMIC <em>Hub</em></div>
+    <div class="logo-sub">VC Intelligence · v3</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Übersicht</div>
+    <button class="nav-btn active" onclick="showView('dash',this)"><span class="ni">📊</span> Dashboard</button>
+    <button class="nav-btn" onclick="showView('db',this)"><span class="ni">🗂</span> Startup-Datenbank</button>
+    <button class="nav-btn" onclick="showView('workflow',this)"><span class="ni">⚡</span> Workflow & Memos</button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">KI-Agenten</div>
+    <button class="nav-btn" onclick="showView('agents',this)"><span class="ni">🤖</span> Agent Hub</button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">System</div>
+    <button class="nav-btn" onclick="showView('settings',this)"><span class="ni">⚙️</span> Einstellungen</button>
+  </div>
+
+  <div class="sidebar-spacer"></div>
+
+  <div class="api-area">
+    <div class="api-lbl">Claude API Key</div>
+    <input class="api-inp" id="apiKey" type="password" placeholder="sk-ant-..."/>
+    <div class="api-link">Gratis: <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div id="content">
+
+<!-- ── DASHBOARD ── -->
+<div class="view active" id="v-dash">
+  <div id="topbar">
+    <div>
+      <div class="tb-title">Dashboard</div>
+      <div class="tb-sub">Guten Morgen — hier ist dein heutiger Überblick</div>
+    </div>
+    <div class="tb-spacer"></div>
+    <button class="btn primary" onclick="openAddModal()">+ Startup hinzufügen</button>
+  </div>
+  <div class="dash-body">
+    <div class="kpi-row" id="kpi-row"></div>
+    <div class="section-head"><div class="sh-title">Deal Pipeline</div><div class="sh-count" id="pipe-count"></div></div>
+    <div class="pipeline-cols" id="pipeline-cols"></div>
+    <div class="section-head"><div class="sh-title">Letzte Aktivitäten</div></div>
+    <div id="activity-feed"></div>
+  </div>
+</div>
+
+<!-- ── STARTUP DB ── -->
+<div class="view" id="v-db">
+  <div id="topbar">
+    <div class="tb-title">Startup-Datenbank</div>
+    <div class="tb-spacer"></div>
+    <button class="btn primary" onclick="openAddModal()">+ Startup hinzufügen</button>
+  </div>
+  <div class="db-body">
+    <div class="db-toolbar">
+      <input class="search-inp" id="db-search" placeholder="🔍  Suche nach Name, Branche, Stadium..." oninput="renderTable()"/>
+      <select class="filter-sel" id="db-stage" onchange="renderTable()">
+        <option value="">Alle Stadien</option>
+        <option>Inbox</option><option>Screening</option><option>Deep Dive</option>
+        <option>IC-Ready</option><option>Portfolio</option><option>Pass</option>
+      </select>
+      <select class="filter-sel" id="db-sector" onchange="renderTable()">
+        <option value="">Alle Branchen</option>
+        <option>FinTech</option><option>HealthTech</option><option>SaaS</option>
+        <option>CleanTech</option><option>DeepTech</option><option>Marketplace</option><option>Other</option>
+      </select>
+      <div class="tb-spacer"></div>
+      <div style="font-size:10px;color:var(--dim)" id="db-count"></div>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden">
+      <div class="table-wrap" style="flex:1">
+        <table>
+          <thead>
+            <tr>
+              <th>Startup</th><th>Branche</th><th>Stadium</th><th>Score</th>
+              <th>ARR</th><th>Growth</th><th>Datum</th><th>Pitch Deck</th><th>Empfehlung</th>
+            </tr>
+          </thead>
+          <tbody id="db-tbody"></tbody>
+        </table>
+      </div>
+      <div id="detail-panel">
+        <div class="dp-header">
+          <div>
+            <div class="dp-name" id="dp-name"></div>
+            <div class="dp-sector" id="dp-sector"></div>
+          </div>
+          <button class="dp-close" onclick="closeDetail()">✕</button>
+        </div>
+        <div class="dp-tabs">
+          <div class="dp-tab active" onclick="dpTab(0,this)">Profil</div>
+          <div class="dp-tab" onclick="dpTab(1,this)">KPIs</div>
+          <div class="dp-tab" onclick="dpTab(2,this)">Analyse</div>
+          <div class="dp-tab" onclick="dpTab(3,this)">Memo</div>
+        </div>
+        <div class="dp-body" id="dp-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── WORKFLOW ── -->
+<div class="view" id="v-workflow">
+  <div id="topbar"><div class="tb-title">Workflow & Automation</div></div>
+  <div class="wf-body">
+    <p style="font-size:11px;color:var(--dim);margin-bottom:16px;line-height:1.7">
+      Wähle ein Startup aus der Datenbank und starte automatisierte Workflows. Die KI nutzt alle vorhandenen Daten für maximale Qualität.
+    </p>
+
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:11px;color:#888">Startup auswählen:</div>
+      <select class="filter-sel" id="wf-startup-sel" style="flex:1;max-width:300px">
+        <option value="">-- Startup auswählen --</option>
+      </select>
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-icon" style="background:#7B61FF18;border:1px solid #7B61FF33">📝</div>
+      <div style="flex:1">
+        <div class="wf-title">Investment Memo generieren</div>
+        <div class="wf-desc">Erstellt automatisch ein vollständiges Investment Memo (3-5 Seiten) mit Executive Summary, Market Analysis, Team Assessment, Financial Review, Risk Factors und Investment Recommendation. Basiert auf allen gespeicherten Startup-Daten + deiner Thesis.</div>
+        <button class="wf-run" style="background:#7B61FF;color:#fff" onclick="runWorkflow('memo')">▶ Memo generieren</button>
+      </div>
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-icon" style="background:#00FF9418;border:1px solid #00FF9433">⚡</div>
+      <div style="flex:1">
+        <div class="wf-title">Deal Screening Report</div>
+        <div class="wf-desc">Schnell-Analyse in 60 Sekunden: Thesis-Fit-Score, Top 3 Stärken, Top 3 Risiken, Vergleich mit Portfolio, klare Pass/Watch/Invest-Empfehlung. Ideal für erste Einschätzung nach Pitch-Deck-Eingang.</div>
+        <button class="wf-run" style="background:#00FF94;color:#000" onclick="runWorkflow('screening')">▶ Screening starten</button>
+      </div>
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-icon" style="background:#FF6B3518;border:1px solid #FF6B3533">📊</div>
+      <div style="flex:1">
+        <div class="wf-title">Due Diligence Checklist</div>
+        <div class="wf-desc">Generiert eine personalisierte DD-Checklist für das gewählte Startup — mit priorisierten Fragen nach Risikobereichen, fehlenden Dokumenten im Datenraum und konkreten Folgefragen für das nächste Founder-Call.</div>
+        <button class="wf-run" style="background:#FF6B35;color:#fff" onclick="runWorkflow('dd')">▶ DD Checklist erstellen</button>
+      </div>
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-icon" style="background:#00D4FF18;border:1px solid #00D4FF33">✉️</div>
+      <div style="flex:1">
+        <div class="wf-title">Outreach-Mail schreiben</div>
+        <div class="wf-desc">Personalisierte Erstkontakt-, Follow-up- oder Absage-Mail basierend auf dem Startup-Profil, Stadium und euren Mail-Templates. Direkt kopierbar für dein E-Mail-Programm.</div>
+        <button class="wf-run" style="background:#00D4FF;color:#000" onclick="runWorkflow('mail')">▶ Mail verfassen</button>
+      </div>
+    </div>
+
+    <div id="wf-output" style="display:none;margin-top:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#ddd" id="wf-output-title"></div>
+        <button class="btn" onclick="copyOutput()">📋 Kopieren</button>
+        <button class="btn" onclick="document.getElementById('wf-output').style.display='none'">✕</button>
+      </div>
+      <div class="memo-box" id="wf-output-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AGENTS ── -->
+<div class="view" id="v-agents">
+  <div class="agent-sidebar">
+    <div style="font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;padding:4px 10px 8px">Agenten</div>
+    <div id="agent-nav"></div>
+  </div>
+  <div class="agent-chat">
+    <div class="chat-header" id="chat-header">
+      <div style="font-size:20px" id="ch-icon">🤖</div>
+      <div class="ch-badge" id="ch-badge" style="background:#7B61FF18;color:#7B61FF;border:1px solid #7B61FF33">Agent Hub</div>
+      <div style="font-size:10px;color:var(--dim);flex:1" id="ch-desc">Wähle einen Agenten</div>
+      <div id="ctx-status" style="font-size:9px;color:#00FF9455"></div>
+    </div>
+    <div id="messages">
+      <div class="empty-chat">
+        <div class="ec-icon">🤖</div>
+        <div class="ec-title">GIMIC Agent Hub</div>
+        <div class="ec-desc">Wähle links einen Agenten. Die KI kennt deine gesamte Startup-Datenbank, Thesis und Templates.</div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <div class="ci-row">
+        <textarea id="msg-input" rows="1" placeholder="Frage stellen..."></textarea>
+        <button id="send-btn" onclick="sendChat()">↑</button>
+      </div>
+      <div style="font-size:9px;color:#1A1A32;margin-top:4px;text-align:right">Enter senden · Shift+Enter Zeilenumbruch</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SETTINGS ── -->
+<div class="view" id="v-settings">
+  <div id="topbar"><div class="tb-title">Einstellungen & Kontext</div></div>
+  <div class="set-body">
+    <div class="set-card">
+      <div class="set-title">🎯 Investment-Thesis & Kriterien</div>
+      <textarea class="set-area" id="cfg-thesis" rows="6" placeholder="z.B.: Wir investieren in B2B SaaS Startups in DACH, Ticket €250K-€2M, Pre-Seed bis Series A. Fokus: Future of Work, FinTech, HealthTech. Mindest-Kriterien: €500K ARR ODER 10+ zahlende Kunden, erfahrenes Team mit Domain-Expertise. No-Gos: Hardware, Consumer Apps, Gaming..."></textarea>
+      <div class="set-hint">Diese Thesis wird automatisch in alle Agenten und Workflows eingebettet.</div>
+    </div>
+    <div class="set-card">
+      <div class="set-title">✉️ Standard Mail-Templates</div>
+      <textarea class="set-area" id="cfg-templates" rows="6" placeholder="Erstkontakt-Template:&#10;Betreff: Investment Interest – [Startup]&#10;Hi [Name], wir sind auf [Startup] aufmerksam geworden...&#10;&#10;Follow-up Template:&#10;Hi [Name], vielen Dank für das gestrige Gespräch..."></textarea>
+    </div>
+    <div class="set-card">
+      <div class="set-title">👤 Fondsprofil</div>
+      <textarea class="set-area" id="cfg-fund" rows="4" placeholder="Fondsname: GIMIC Capital&#10;Fokus: Early-Stage B2B SaaS DACH&#10;Ticket: €250K – €2M&#10;Portfolio: 15 Unternehmen&#10;Fund Size: €50M"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn" onclick="loadDemo()">Demo-Daten laden</button>
+      <button class="btn primary" onclick="saveSettings()">💾 Speichern</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end content -->
+</div><!-- end shell -->
+
+<!-- ══ ADD MODAL ══ -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Startup hinzufügen</div>
+    <div class="form-grid">
+      <div class="form-group"><div class="form-lbl">Startup-Name *</div><input class="form-inp" id="f-name" placeholder="z.B. FinFlow GmbH"/></div>
+      <div class="form-group"><div class="form-lbl">Branche</div>
+        <select class="form-inp" id="f-sector">
+          <option>FinTech</option><option>HealthTech</option><option>SaaS</option>
+          <option>CleanTech</option><option>DeepTech</option><option>Marketplace</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><div class="form-lbl">Stadium</div>
+        <select class="form-inp" id="f-stage">
+          <option>Inbox</option><option>Screening</option><option>Deep Dive</option>
+          <option>IC-Ready</option><option>Portfolio</option><option>Pass</option>
+        </select>
+      </div>
+      <div class="form-group"><div class="form-lbl">Investitionsrunde</div>
+        <select class="form-inp" id="f-round">
+          <option>Pre-Seed</option><option>Seed</option><option>Series A</option>
+          <option>Series B</option><option>Series C+</option>
+        </select>
+      </div>
+      <div class="form-group"><div class="form-lbl">ARR / Umsatz</div><input class="form-inp" id="f-arr" placeholder="z.B. €1.2M ARR"/></div>
+      <div class="form-group"><div class="form-lbl">Wachstum (YoY)</div><input class="form-inp" id="f-growth" placeholder="z.B. 180%"/></div>
+      <div class="form-group"><div class="form-lbl">Team-Größe</div><input class="form-inp" id="f-team" placeholder="z.B. 12 MA"/></div>
+      <div class="form-group"><div class="form-lbl">Runway</div><input class="form-inp" id="f-runway" placeholder="z.B. 18 Monate"/></div>
+      <div class="form-group"><div class="form-lbl">CAC</div><input class="form-inp" id="f-cac" placeholder="z.B. €2.400"/></div>
+      <div class="form-group"><div class="form-lbl">LTV</div><input class="form-inp" id="f-ltv" placeholder="z.B. €18.000"/></div>
+      <div class="form-group full"><div class="form-lbl">Pitch Deck Link (Google Drive / Dropbox / URL)</div><input class="form-inp" id="f-deck" placeholder="https://drive.google.com/..."/></div>
+      <div class="form-group full"><div class="form-lbl">Gründer & Team</div><input class="form-inp" id="f-founders" placeholder="z.B. Anna Müller (ex-Google), Tobias Klein (2x Exit)"/></div>
+      <div class="form-group full"><div class="form-lbl">Beschreibung & Notizen</div><textarea class="form-inp" id="f-notes" rows="3" placeholder="Was macht das Startup? Erste Eindrücke, Besonderheiten..."></textarea></div>
+      <div class="form-group"><div class="form-lbl">AI Score (1-10)</div><input class="form-inp" id="f-score" type="number" min="1" max="10" placeholder="8"/></div>
+      <div class="form-group"><div class="form-lbl">Empfehlung</div>
+        <select class="form-inp" id="f-rec">
+          <option>Watch</option><option>Deep Dive</option><option>Investieren</option><option>Pass</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="saveStartup()">💾 Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ STATE ══
+let startups = [];
+let settings = { thesis:'', templates:'', fund:'' };
+let currentAgent = null;
+let chatMessages = [];
+let chatLoading = false;
+let editingId = null;
+let currentDetailId = null;
+let currentDpTab = 0;
+
+const STAGES = ['Inbox','Screening','Deep Dive','IC-Ready','Portfolio','Pass'];
+const STAGE_COLORS = {
+  'Inbox':'#888','Screening':'#FFD93D','Deep Dive':'#7B61FF',
+  'IC-Ready':'#FF6B35','Portfolio':'#00FF94','Pass':'#FF4D4D'
+};
+const REC_CLASS = {'Pass':'badge-pass','Watch':'badge-watch','Deep Dive':'badge-dive','Investieren':'badge-invest'};
+
+// ══ AGENTS ══
+const AGENTS = [
+  {
+    id:'dealflow', icon:'⚡', name:'Deal-Flow', color:'#FF6B35',
+    desc:'Analysiere & priorisiere Startups',
+    tips:['Welche Startups in meiner Pipeline passen am besten zu unserer Thesis?','Analysiere das neueste Startup in der Inbox','Erstelle ein Ranking meiner Top-5 Deals'],
+    system:`Du bist ein erfahrener VC-Deal-Flow-Analyst mit Zugriff auf die GIMIC-Startup-Datenbank.
+{{DB}}
+{{THESIS}}
+Analysiere Startups und erstelle strukturierte Berichte mit: Executive Summary, Thesis-Fit, Markt, Team, Score (1-10), Empfehlung.
+Wenn du nach der Pipeline gefragt wirst, referenziere konkrete Startups aus der Datenbank.`
+  },
+  {
+    id:'valuation', icon:'📊', name:'Bewertung & DD', color:'#00FF94',
+    desc:'Due Diligence & Valuation',
+    tips:['Führe eine vollständige Bewertung von [Startup] durch','Vergleiche Unit Economics unserer Portfolio-Unternehmen','Welche DD-Fragen fehlen noch für [Startup]?'],
+    system:`Du bist Senior VC Partner für Bewertungen und Due Diligence.
+{{DB}}
+{{THESIS}}
+Erstelle detaillierte Bewertungen mit Valuation, Unit Economics, PMF-Score, Bull/Bear Case.
+Referenziere Portfolio-Benchmarks aus der Datenbank wenn verfügbar.`
+  },
+  {
+    id:'portfolio', icon:'📈', name:'Portfolio', color:'#7B61FF',
+    desc:'Portfolio Health & Exit-Analyse',
+    tips:['Erstelle einen Portfolio-Health-Report','Welche Portfolio-Unternehmen haben Red Flags?','Exit-Readiness der Portfolio-Unternehmen'],
+    system:`Du bist Portfolio-Manager bei GIMIC Capital.
+{{DB}}
+{{THESIS}}
+Erstelle Portfolio-Reports, analysiere KPIs, erkenne Red Flags und bewerbe Exit-Potenzial.
+Nutze die konkreten Portfolio-Daten aus der Datenbank für präzise Aussagen.`
+  },
+  {
+    id:'pitchdeck', icon:'🎯', name:'Pitch Deck', color:'#FFD93D',
+    desc:'Slide-by-Slide Pitch-Analyse',
+    tips:['Analysiere dieses Pitch Deck: [beschreibe Inhalt]','Welche Slides fehlen typischerweise?','Bewertet Pitch mit Score 1-10'],
+    system:`Du bist erfahrener VC-Partner der Pitch Decks bewertet.
+{{DB}}
+{{THESIS}}
+Analysiere Decks slide-by-slide: 🔴 Deal-Breaker / 🟡 Schwächen / 🟢 Stärken.
+Thesis-Fit Score, Overall Score /10, klare Empfehlung. Vergleiche mit ähnlichen Deals aus der DB.`
+  },
+  {
+    id:'outreach', icon:'✉️', name:'Outreach', color:'#00D4FF',
+    desc:'Personalisierte Investor-Mails',
+    tips:['Erstkontakt-Mail für [Startup] nach deren Pitch','Follow-Up nach erstem Meeting mit [Startup]','Professionelle Absage an [Startup]'],
+    system:`Du bist VC-Partner und schreibst professionelle, personalisierte Outreach-Mails.
+{{DB}}
+{{TEMPLATES}}
+Nutze Startup-Details aus der DB für personalisierte Mails. Orientiere dich am Template-Stil.
+Format: **Betreff:** ... / Anrede / Hauptteil / CTA / Abschluss. Direkt, auf Augenhöhe.`
+  },
+  {
+    id:'mentor', icon:'🧠', name:'VC-Mentor', color:'#FF4D8B',
+    desc:'Strategie, LP-Reporting, Markt',
+    tips:['Wie strukturiere ich ein LP-Update-Meeting?','Welche Bewertungs-Multiples sind aktuell realistisch?','Wie verbessere ich unseren Deal-Sourcing-Prozess?'],
+    system:`Du bist ein erfahrener VC-Partner und Mentor mit 20+ Jahren Erfahrung.
+{{DB}}
+{{THESIS}}
+Gib strategischen Rat zu: Fund-Strategie, LP-Relations, Marktentwicklungen, Best Practices.
+Beziehe dich auf den aktuellen Fund-Kontext und die Portfolio-Daten aus der DB.`
+  }
+];
+
+// ══ INIT ══
+function init() {
+  const saved = localStorage.getItem('gimic_startups');
+  if (saved) startups = JSON.parse(saved);
+  const savedCfg = localStorage.getItem('gimic_settings');
+  if (savedCfg) settings = JSON.parse(savedCfg);
+  const savedKey = localStorage.getItem('gimic_key');
+  if (savedKey) document.getElementById('apiKey').value = savedKey;
+
+  // Load settings into fields
+  document.getElementById('cfg-thesis').value = settings.thesis || '';
+  document.getElementById('cfg-templates').value = settings.templates || '';
+  document.getElementById('cfg-fund').value = settings.fund || '';
+
+  buildAgentNav();
+  renderDash();
+  renderTable();
+  renderWfSelect();
+}
+
+function save() {
+  localStorage.setItem('gimic_startups', JSON.stringify(startups));
+}
+
+function saveSettings() {
+  settings.thesis = document.getElementById('cfg-thesis').value;
+  settings.templates = document.getElementById('cfg-templates').value;
+  settings.fund = document.getElementById('cfg-fund').value;
+  localStorage.setItem('gimic_settings', JSON.stringify(settings));
+  showToast('Einstellungen gespeichert ✓');
+}
+
+document.getElementById('apiKey').addEventListener('input', e => localStorage.setItem('gimic_key', e.target.value));
+
+// ══ VIEWS ══
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('v-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (id === 'db') renderTable();
+  if (id === 'dash') renderDash();
+  if (id === 'workflow') renderWfSelect();
+}
+
+// ══ DASHBOARD ══
+function renderDash() {
+  const total = startups.length;
+  const portfolio = startups.filter(s => s.stage === 'Portfolio').length;
+  const pipeline = startups.filter(s => !['Portfolio','Pass'].includes(s.stage)).length;
+  const avgScore = total ? Math.round(startups.reduce((a,s) => a + (parseInt(s.score)||0), 0) / total * 10) / 10 : 0;
+
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${total}</div><div class="kpi-lbl">Startups gesamt</div><div class="kpi-delta green">In Datenbank</div></div>
+    <div class="kpi"><div class="kpi-val">${pipeline}</div><div class="kpi-lbl">Aktive Pipeline</div><div class="kpi-delta yellow">In Prüfung</div></div>
+    <div class="kpi"><div class="kpi-val">${portfolio}</div><div class="kpi-lbl">Portfolio</div><div class="kpi-delta blue">Investiert</div></div>
+    <div class="kpi"><div class="kpi-val">${avgScore || '—'}</div><div class="kpi-lbl">Ø AI-Score</div><div class="kpi-delta purple">von 10</div></div>
+  `;
+
+  document.getElementById('pipe-count').textContent = `${total} Startups`;
+  const cols = STAGES.map(stage => {
+    const items = startups.filter(s => s.stage === stage);
+    const cards = items.map(s => `
+      <div class="pcard" onclick="openDetail('${s.id}');showView('db',null)">
+        <div class="pcard-name">${s.name}<span class="score-badge" style="background:${scoreColor(s.score)}22;color:${scoreColor(s.score)}">${s.score||'?'}</span></div>
+        <div class="pcard-meta">${s.sector} · ${s.arr||'—'}</div>
+      </div>
+    `).join('');
+    return `<div class="pcol">
+      <div class="pcol-head" style="color:${STAGE_COLORS[stage]}"><span>${stage}</span><span class="pcol-count">${items.length}</span></div>
+      ${cards || '<div style="font-size:10px;color:var(--dim);padding:4px 0">Leer</div>'}
+    </div>`;
+  }).join('');
+  document.getElementById('pipeline-cols').innerHTML = cols;
+
+  const acts = [...startups].sort((a,b) => new Date(b.addedAt) - new Date(a.addedAt)).slice(0,8);
+  document.getElementById('activity-feed').innerHTML = acts.map(s => `
+    <div class="activity-item">
+      <div class="act-dot" style="background:${STAGE_COLORS[s.stage]||'#888'}"></div>
+      <div class="act-text"><b style="color:#bbb">${s.name}</b> — ${s.stage} · ${s.sector} · Score: ${s.score||'?'}</div>
+      <div class="act-time">${fmtDate(s.addedAt)}</div>
+    </div>
+  `).join('') || '<div style="font-size:11px;color:var(--dim);padding:8px 0">Noch keine Aktivitäten</div>';
+}
+
+// ══ TABLE ══
+function renderTable() {
+  const q = document.getElementById('db-search').value.toLowerCase();
+  const stage = document.getElementById('db-stage').value;
+  const sector = document.getElementById('db-sector').value;
+  let filtered = startups.filter(s =>
+    (!q || s.name.toLowerCase().includes(q) || (s.sector||'').toLowerCase().includes(q) || (s.notes||'').toLowerCase().includes(q)) &&
+    (!stage || s.stage === stage) &&
+    (!sector || s.sector === sector)
+  );
+  document.getElementById('db-count').textContent = `${filtered.length} Startups`;
+  document.getElementById('db-tbody').innerHTML = filtered.map(s => `
+    <tr onclick="openDetail('${s.id}')">
+      <td class="name-cell">${s.name}</td>
+      <td>${s.sector||'—'}</td>
+      <td><span class="stage-pill" style="background:${STAGE_COLORS[s.stage]||'#888'}18;color:${STAGE_COLORS[s.stage]||'#888'};border:1px solid ${STAGE_COLORS[s.stage]||'#888'}33">${s.stage||'—'}</span></td>
+      <td><span style="color:${scoreColor(s.score)};font-weight:600">${s.score||'—'}</span>/10</td>
+      <td>${s.arr||'—'}</td>
+      <td>${s.growth||'—'}</td>
+      <td>${fmtDate(s.addedAt)}</td>
+      <td>${s.deck ? `<a class="link-icon" href="${s.deck}" target="_blank" onclick="event.stopPropagation()">🔗 Deck</a>` : '<span style="color:var(--dim)">—</span>'}</td>
+      <td><span class="tag ${REC_CLASS[s.rec]||''}">${s.rec||'—'}</span></td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--dim)">Keine Startups gefunden · Füge dein erstes Startup hinzu</td></tr>';
+}
+
+// ══ DETAIL PANEL ══
+function openDetail(id) {
+  const s = startups.find(x => x.id === id);
+  if (!s) return;
+  currentDetailId = id;
+  document.getElementById('dp-name').textContent = s.name;
+  document.getElementById('dp-sector').textContent = `${s.sector} · ${s.round||''} · ${s.stage}`;
+  document.getElementById('detail-panel').classList.add('open');
+  renderDpTab(0);
+  document.querySelectorAll('.dp-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+  currentDetailId = null;
+}
+
+function dpTab(idx, el) {
+  currentDpTab = idx;
+  document.querySelectorAll('.dp-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  renderDpTab(idx);
+}
+
+function renderDpTab(idx) {
+  const s = startups.find(x => x.id === currentDetailId);
+  if (!s) return;
+  const body = document.getElementById('dp-body');
+  if (idx === 0) { // Profil
+    body.innerHTML = `
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="stat-box"><div class="stat-val">${s.score||'—'}/10</div><div class="stat-lbl">AI Score</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:${STAGE_COLORS[s.stage]||'#888'}">${s.stage}</div><div class="stat-lbl">Stadium</div></div>
+      </div>
+      <div class="progress-bar" style="margin-bottom:12px"><div class="progress-fill" style="width:${(parseInt(s.score)||0)*10}%;background:${scoreColor(s.score)}"></div></div>
+      ${row('Runde', s.round)} ${row('Branche', s.sector)} ${row('Gegründet', s.founded)}
+      ${row('Gründer', s.founders)}
+      ${s.deck ? `<div style="margin:10px 0"><a href="${s.deck}" target="_blank" class="btn" style="display:inline-flex"><span>🔗</span> Pitch Deck öffnen</a></div>` : ''}
+      <hr class="divider"/>
+      <div style="font-size:11px;color:#888;line-height:1.7">${s.notes||'<span style="color:var(--dim)">Keine Notizen</span>'}</div>
+      <hr class="divider"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn primary" onclick="editStartup('${s.id}')">✏️ Bearbeiten</button>
+        <button class="btn danger" onclick="deleteStartup('${s.id}')">🗑 Löschen</button>
+      </div>
+    `;
+  } else if (idx === 1) { // KPIs
+    body.innerHTML = `
+      <div class="grid2">
+        ${kpiBox('ARR',s.arr)} ${kpiBox('Wachstum',s.growth,'green')}
+        ${kpiBox('Runway',s.runway)} ${kpiBox('Team',s.team)}
+        ${kpiBox('CAC',s.cac)} ${kpiBox('LTV',s.ltv)}
+      </div>
+      <hr class="divider"/>
+      <div style="font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">LTV/CAC Ratio</div>
+      ${calcLtvCac(s)}
+    `;
+  } else if (idx === 2) { // Analyse
+    body.innerHTML = `
+      <div style="margin-bottom:10px">
+        <span class="tag ${REC_CLASS[s.rec]||''}" style="font-size:11px;padding:4px 10px">${s.rec||'Offen'}</span>
+      </div>
+      ${s.analysis ? `<div class="memo-box">${s.analysis}</div>` : `
+        <div style="font-size:11px;color:var(--dim);margin-bottom:12px">Noch keine KI-Analyse vorhanden.</div>
+        <button class="btn primary" onclick="quickAnalyze('${s.id}')">🤖 KI-Analyse jetzt generieren</button>
+      `}
+    `;
+  } else if (idx === 3) { // Memo
+    body.innerHTML = `
+      ${s.memo ? `<div class="memo-box">${s.memo}</div>
+        <div style="margin-top:10px;display:flex;gap:6px">
+          <button class="btn" onclick="copyText(\`${(s.memo||'').replace(/`/g,"'")}\`)">📋 Kopieren</button>
+          <button class="btn" onclick="regenMemo('${s.id}')">🔄 Neu generieren</button>
+        </div>` :
+      `<div style="font-size:11px;color:var(--dim);margin-bottom:12px">Noch kein Investment Memo erstellt.</div>
+       <button class="btn primary" onclick="regenMemo('${s.id}')">📝 Memo jetzt erstellen</button>`
+      }
+    `;
+  }
+}
+
+function row(lbl, val) {
+  return val ? `<div class="set-row"><span>${lbl}</span><span style="color:#bbb">${val}</span></div>` : '';
+}
+function kpiBox(lbl, val, cls='') {
+  return `<div class="stat-box"><div class="stat-val ${cls}">${val||'—'}</div><div class="stat-lbl">${lbl}</div></div>`;
+}
+function calcLtvCac(s) {
+  const ltv = parseFloat((s.ltv||'').replace(/[€$,K]/gi, v => v==='K'?'000':''));
+  const cac = parseFloat((s.cac||'').replace(/[€$,K]/gi, v => v==='K'?'000':''));
+  if (ltv && cac) {
+    const ratio = (ltv/cac).toFixed(1);
+    const color = ratio >= 3 ? 'var(--green)' : ratio >= 2 ? 'var(--yellow)' : 'var(--red)';
+    return `<div style="font-size:22px;font-family:'Syne',sans-serif;font-weight:800;color:${color}">${ratio}x</div>
+    <div style="font-size:10px;color:var(--dim);margin-top:2px">${ratio>=3?'✅ Excellent (>3x)':ratio>=2?'⚠️ OK (2-3x)':'❌ Zu niedrig (<2x)'}</div>`;
+  }
+  return '<div style="font-size:11px;color:var(--dim)">CAC & LTV eingeben für Berechnung</div>';
+}
+
+// ══ ADD / EDIT MODAL ══
+function openAddModal(id) {
+  editingId = id || null;
+  const s = id ? startups.find(x => x.id === id) : {};
+  document.getElementById('modal-title').textContent = id ? 'Startup bearbeiten' : 'Startup hinzufügen';
+  ['name','sector','stage','round','arr','growth','team','runway','cac','ltv','deck','founders','notes','score','rec']
+    .forEach(f => { const el = document.getElementById('f-'+f); if(el) el.value = (s&&s[f])||''; });
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+function editStartup(id) { openAddModal(id); }
+
+function saveStartup() {
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+  const s = {
+    id: editingId || Date.now().toString(),
+    name: get('f-name'), sector: get('f-sector'), stage: get('f-stage'),
+    round: get('f-round'), arr: get('f-arr'), growth: get('f-growth'),
+    team: get('f-team'), runway: get('f-runway'), cac: get('f-cac'), ltv: get('f-ltv'),
+    deck: get('f-deck'), founders: get('f-founders'), notes: get('f-notes'),
+    score: get('f-score'), rec: get('f-rec'),
+    addedAt: editingId ? (startups.find(x=>x.id===editingId)?.addedAt || new Date().toISOString()) : new Date().toISOString()
+  };
+  if (!s.name) { alert('Bitte Startup-Name eingeben'); return; }
+  if (editingId) {
+    const idx = startups.findIndex(x => x.id === editingId);
+    const existing = startups[idx];
+    startups[idx] = {...existing, ...s};
+  } else {
+    startups.unshift(s);
+  }
+  save();
+  closeModal();
+  renderDash();
+  renderTable();
+  renderWfSelect();
+  if (currentDetailId === s.id) renderDpTab(currentDpTab);
+  showToast(editingId ? 'Startup aktualisiert ✓' : 'Startup hinzugefügt ✓');
+}
+
+function deleteStartup(id) {
+  if (!confirm('Startup wirklich löschen?')) return;
+  startups = startups.filter(s => s.id !== id);
+  save();
+  closeDetail();
+  renderDash();
+  renderTable();
+  showToast('Gelöscht ✓');
+}
+
+// ══ AI HELPERS ══
+function getApiKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k) { showToast('⚠️ Bitte Claude API Key eingeben (links unten)'); return null; }
+  return k;
+}
+
+function buildDBContext() {
+  if (!startups.length) return '';
+  const summary = startups.map(s =>
+    `• ${s.name} | ${s.sector} | ${s.stage} | Score:${s.score||'?'} | ${s.arr||'—'} ARR | ${s.growth||'—'} Growth | Rec:${s.rec||'?'}`
+  ).join('\n');
+  return `\n\n=== GIMIC STARTUP-DATENBANK (${startups.length} Startups) ===\n${summary}\n===`;
+}
+
+function buildThesisContext() {
+  return settings.thesis ? `\n\n=== INVESTMENT-THESIS & KRITERIEN ===\n${settings.thesis}\n===` : '';
+}
+
+function buildTemplatesContext() {
+  return settings.templates ? `\n\n=== MAIL-TEMPLATES ===\n${settings.templates}\n===` : '';
+}
+
+async function callClaude(system, userMsg, maxTokens=2000) {
+  const key = getApiKey();
+  if (!key) return null;
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system, messages:[{role:'user',content:userMsg}]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content?.map(b=>b.text||'').join('') || '';
+}
+
+async function quickAnalyze(id) {
+  const s = startups.find(x => x.id === id);
+  if (!s) return;
+  const body = document.getElementById('dp-body');
+  body.innerHTML = '<div style="color:var(--dim);font-size:11px;padding:10px 0">🤖 KI analysiert...</div>';
+  const system = `Du bist ein VC-Analyst. Analysiere dieses Startup präzise.${buildThesisContext()}`;
+  const prompt = `Analysiere: ${JSON.stringify({name:s.name,sector:s.sector,stage:s.stage,arr:s.arr,growth:s.growth,cac:s.cac,ltv:s.ltv,team:s.team,founders:s.founders,notes:s.notes})}
+Erstelle: 1) Thesis-Fit (1-10) 2) Top 3 Stärken 3) Top 3 Risiken 4) Score (1-10) 5) Empfehlung`;
+  try {
+    const result = await callClaude(system, prompt, 800);
+    const idx = startups.findIndex(x => x.id === id);
+    startups[idx].analysis = result;
+    save();
+    renderDpTab(2);
+  } catch(e) { body.innerHTML = `<div class="red">Fehler: ${e.message}</div>`; }
+}
+
+async function regenMemo(id) {
+  const s = startups.find(x => x.id === id);
+  if (!s) return;
+  const body = document.getElementById('dp-body');
+  body.innerHTML = '<div style="color:var(--dim);font-size:11px;padding:10px 0">📝 Investment Memo wird generiert...</div>';
+  const system = `Du bist ein Senior VC Partner und Investment-Memo-Experte.${buildThesisContext()}${buildDBContext()}`;
+  const prompt = `Erstelle ein vollständiges Investment Memo für: ${JSON.stringify(s)}
+
+Struktur:
+**INVESTMENT MEMO – ${s.name}**
+**Datum:** ${new Date().toLocaleDateString('de')} | **Stadium:** ${s.stage} | **Score:** ${s.score}/10
+
+**1. EXECUTIVE SUMMARY** (5-6 Sätze)
+**2. INVESTMENT THESIS** (Warum investieren? Was ist der Unfair Advantage?)
+**3. MARKT & WETTBEWERB** (TAM/SAM/SOM, Top-Konkurrenten, Differenzierung)
+**4. PRODUKT & TECHNOLOGIE** (Was wird gebaut? Skalierbarkeit? Moat?)
+**5. TEAM** (Gründer-Fit, Erfahrung, Gaps)
+**6. FINANZEN & UNIT ECONOMICS** (ARR, Wachstum, CAC/LTV, Runway, Burn)
+**7. RISIKEN & MITIGATIONEN** (Top 5 Risiken mit Gegenmassnahmen)
+**8. PORTFOLIO-FIT** (Ergänzt unser Portfolio? Synergiepotenzial?)
+**9. EMPFEHLUNG** (Pass / Watch / Investieren + Begründung)
+**10. NÄCHSTE SCHRITTE** (Konkrete Action Items)`;
+  try {
+    const result = await callClaude(system, prompt, 2000);
+    const idx = startups.findIndex(x => x.id === id);
+    startups[idx].memo = result;
+    save();
+    renderDpTab(3);
+  } catch(e) { body.innerHTML = `<div class="red">Fehler: ${e.message}</div>`; }
+}
+
+// ══ WORKFLOW ══
+function renderWfSelect() {
+  const sel = document.getElementById('wf-startup-sel');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- Startup auswählen --</option>' +
+    startups.map(s => `<option value="${s.id}">${s.name} (${s.stage})</option>`).join('');
+  if (current) sel.value = current;
+}
+
+async function runWorkflow(type) {
+  const sid = document.getElementById('wf-startup-sel').value;
+  const s = sid ? startups.find(x => x.id === sid) : null;
+  const ctx = `${buildThesisContext()}${buildDBContext()}`;
+
+  let systemPrompt, userPrompt, title;
+
+  if (type === 'memo') {
+    if (!s) { showToast('Bitte zuerst ein Startup auswählen'); return; }
+    title = `Investment Memo — ${s.name}`;
+    systemPrompt = `Du bist Senior VC Partner und Investment-Memo-Experte.${ctx}`;
+    userPrompt = `Erstelle ein vollständiges Investment Memo für ${s.name}. Daten: ${JSON.stringify(s)}
+Vollständige Struktur: Executive Summary, Investment Thesis, Markt, Produkt, Team, Finanzen, Risiken, Portfolio-Fit, Empfehlung, Nächste Schritte.`;
+  } else if (type === 'screening') {
+    if (!s) { showToast('Bitte zuerst ein Startup auswählen'); return; }
+    title = `Screening Report — ${s.name}`;
+    systemPrompt = `Du bist VC-Deal-Flow-Analyst.${ctx}`;
+    userPrompt = `Erstelle einen kompakten Screening Report für ${s.name}: Daten: ${JSON.stringify(s)}
+Format: Thesis-Fit-Score, Top-3-Stärken, Top-3-Risiken, Portfolio-Vergleich, Empfehlung (Pass/Watch/Deep Dive/Investieren) mit klarer Begründung in max. 400 Wörtern.`;
+  } else if (type === 'dd') {
+    if (!s) { showToast('Bitte zuerst ein Startup auswählen'); return; }
+    title = `DD Checklist — ${s.name}`;
+    systemPrompt = `Du bist VC Due-Diligence-Experte.${ctx}`;
+    userPrompt = `Erstelle eine personalisierte Due-Diligence-Checklist für ${s.name} (${s.sector}, ${s.stage}). Daten: ${JSON.stringify(s)}
+Kategorien: Finanzen, Produkt/Tech, Markt, Team, Legal/IP, Kunden, Datenraum-Dokumente. Priorisiere nach Risiko. Füge konkrete Fragen für nächsten Founder-Call hinzu.`;
+  } else if (type === 'mail') {
+    if (!s) { showToast('Bitte zuerst ein Startup auswählen'); return; }
+    title = `Outreach Mail — ${s.name}`;
+    systemPrompt = `Du bist VC-Partner.${ctx}${buildTemplatesContext()}`;
+    userPrompt = `Schreibe eine personalisierte ${s.stage === 'Inbox' ? 'Erstkontakt' : s.stage === 'Pass' ? 'Absage' : 'Follow-up'}-Mail an ${s.name} (${s.sector}, ${s.round||'Seed'}). Orientiere dich am Template-Stil. Kurz, direkt, auf Augenhöhe.`;
+  }
+
+  const output = document.getElementById('wf-output');
+  const outputText = document.getElementById('wf-output-text');
+  const outputTitle = document.getElementById('wf-output-title');
+  output.style.display = 'block';
+  outputTitle.textContent = title;
+  outputText.textContent = '⏳ Wird generiert...';
+
+  try {
+    const result = await callClaude(systemPrompt, userPrompt, 2000);
+    outputText.textContent = result;
+    // Auto-save memo
+    if (type === 'memo' && sid) {
+      const idx = startups.findIndex(x => x.id === sid);
+      if (idx >= 0) { startups[idx].memo = result; save(); }
+      showToast('Memo in Startup-Profil gespeichert ✓');
+    }
+  } catch(e) { outputText.textContent = `Fehler: ${e.message}`; }
+}
+
+function copyOutput() { copyText(document.getElementById('wf-output-text').textContent); }
+function copyText(t) { navigator.clipboard.writeText(t).then(() => showToast('Kopiert ✓')); }
+
+// ══ AGENT CHAT ══
+function buildAgentNav() {
+  const nav = document.getElementById('agent-nav');
+  nav.innerHTML = AGENTS.map(a => `
+    <button class="agent-btn" id="ab-${a.id}" onclick="selectAgent('${a.id}')">
+      <div class="agent-icon" style="background:${a.color}15;border:1px solid ${a.color}25;color:${a.color}">${a.icon}</div>
+      <div class="agent-name">${a.name}</div>
+    </button>
+  `).join('');
+}
+
+function selectAgent(id) {
+  currentAgent = AGENTS.find(a => a.id === id);
+  chatMessages = [];
+  document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('ab-' + id).classList.add('active');
+
+  document.getElementById('ch-icon').textContent = currentAgent.icon;
+  const badge = document.getElementById('ch-badge');
+  badge.textContent = currentAgent.name;
+  badge.style.cssText = `background:${currentAgent.color}15;color:${currentAgent.color};border:1px solid ${currentAgent.color}30`;
+  document.getElementById('ch-desc').textContent = currentAgent.desc;
+  document.getElementById('send-btn').style.background = currentAgent.color;
+  document.getElementById('send-btn').style.color = '#000';
+
+  const dbLen = startups.length;
+  document.getElementById('ctx-status').textContent = dbLen ? `🔒 ${dbLen} Startups als Kontext` : '';
+
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = `
+    <div class="empty-chat">
+      <div class="ec-icon">${currentAgent.icon}</div>
+      <div class="ec-title" style="color:${currentAgent.color}">${currentAgent.name}</div>
+      <div class="ec-desc">${currentAgent.desc}</div>
+      <div class="tip-chips">${currentAgent.tips.map(t => `<div class="tip-chip" onclick="useTip('${t.replace(/'/g,'`')}')">${t}</div>`).join('')}</div>
+    </div>`;
+}
+
+function useTip(t) {
+  document.getElementById('msg-input').value = t;
+  sendChat();
+}
+
+async function sendChat() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || chatLoading || !currentAgent) return;
+  const key = getApiKey(); if (!key) return;
+
+  input.value = ''; input.style.height = 'auto';
+  chatLoading = true; document.getElementById('send-btn').disabled = true;
+  const msgs = document.getElementById('messages');
+  const empty = msgs.querySelector('.empty-chat'); if (empty) empty.remove();
+
+  chatMessages.push({role:'user',content:text});
+  appendChatMsg('user', text);
+
+  const typing = document.createElement('div');
+  typing.className='typing-dots';
+  typing.innerHTML = [0,1,2].map(i => `<div class="td" style="background:${currentAgent.color};animation-delay:${i*0.18}s"></div>`).join('');
+  msgs.appendChild(typing);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Build system with context
+  let sys = currentAgent.system
+    .replace('{{DB}}', buildDBContext())
+    .replace('{{THESIS}}', buildThesisContext())
+    .replace('{{TEMPLATES}}', buildTemplatesContext());
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1800,system:sys,messages:chatMessages})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.content?.map(b=>b.text||'').join('') || '⚠️ Keine Antwort';
+    chatMessages.push({role:'assistant',content:reply});
+    typing.remove();
+    appendChatMsg('bot', reply);
+  } catch(e) {
+    typing.remove();
+    appendChatMsg('bot', `⚠️ Fehler: ${e.message}`);
+  }
+  chatLoading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+function appendChatMsg(role, text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^#{1,3} (.+)$/gm,'<span class="md-h">$1</span>')
+    .replace(/^---+$/gm,'<hr style="border:none;border-top:1px solid var(--b1);margin:6px 0"/>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:11px">$1</code>')
+    .replace(/\n/g,'<br/>');
+  div.appendChild(bubble);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ══ UTILS ══
+function scoreColor(s) {
+  const n = parseInt(s);
+  if (!n) return '#888';
+  if (n >= 8) return '#00FF94';
+  if (n >= 6) return '#FFD93D';
+  return '#FF4D4D';
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--s3);border:1px solid var(--b2);border-radius:8px;padding:10px 16px;font-size:11px;color:#ddd;z-index:999;animation:fup 0.2s ease';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// Input events
+const msgInput = document.getElementById('msg-input');
+msgInput.addEventListener('input', () => { msgInput.style.height='auto'; msgInput.style.height=Math.min(msgInput.scrollHeight,100)+'px'; });
+msgInput.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();} });
+document.getElementById('modal-overlay').addEventListener('click', e => { if(e.target===e.currentTarget)closeModal(); });
+
+// ══ DEMO DATA ══
+function loadDemo() {
+  if (!confirm('Demo-Daten laden? (Bestehende Startups bleiben erhalten)')) return;
+  settings.thesis = `Wir investieren in B2B SaaS Startups in DACH & Europa, Ticket €200K–€2M, Pre-Seed bis Series A.
+Fokus: Future of Work, FinTech Infrastructure, HealthTech, Climate SaaS.
+Mindest-Kriterien: €300K+ ARR ODER 15+ zahlende Kunden, erfahrenes Team (mind. 1 Domain-Experte), skalierbare Unit Economics (LTV/CAC >3x).
+No-Gos: Hardware, Consumer Apps, Gaming, Crypto-Spekulation.`;
+  settings.fund = 'GIMIC Capital · Early-Stage B2B SaaS DACH · Ticket €200K–€2M · 18 Portfolio-Unternehmen · Fund Size €75M';
+  settings.templates = `Erstkontakt:\nBetreff: Re: [Startup] – Kurzes Gespräch?\nHi [Name], wir sind auf [Startup] aufmerksam geworden – das Modell und eure Traction im [Bereich] haben uns beeindruckt. Hättet ihr 30 Minuten diese Woche für einen ersten Austausch? Viele Grüße, [Name] / GIMIC Capital\n\nFollow-up:\nHi [Name], vielen Dank für das gestrige Gespräch! Die Dynamik die ihr im [Bereich] seht, überzeugt uns. Als nächsten Schritt würden wir gerne einen Deep-Dive machen – wann passt ein 90-Minuten-Call?`;
+  document.getElementById('cfg-thesis').value = settings.thesis;
+  document.getElementById('cfg-templates').value = settings.templates;
+  document.getElementById('cfg-fund').value = settings.fund;
+  const demos = [
+    {id:'d1',name:'FinFlow GmbH',sector:'FinTech',stage:'Deep Dive',round:'Seed',arr:'€1.2M',growth:'180%',team:'14 MA',runway:'22 Monate',cac:'€1.800',ltv:'€16.000',founders:'Anna Müller (ex-Stripe), Tobias Klein (2x Exit)',notes:'B2B SaaS für SME-Buchhaltung. 45 zahlende Kunden, 98% Retention. Pipeline sehr stark.',score:'8',rec:'Deep Dive',addedAt:new Date(Date.now()-7*864e5).toISOString(),deck:''},
+    {id:'d2',name:'HealthOS AG',sector:'HealthTech',stage:'IC-Ready',round:'Series A',arr:'€3.8M',growth:'220%',team:'28 MA',runway:'18 Monate',cac:'€4.200',ltv:'€42.000',founders:'Dr. Sarah Lang (Ärztin + Informatikerin), Max Bauer (ex-McKinsey)',notes:'Digitale Patientenakte für Arztpraxen. 180 Praxen aktiv. Starke NPS von 72.',score:'9',rec:'Investieren',addedAt:new Date(Date.now()-2*864e5).toISOString(),deck:''},
+    {id:'d3',name:'ClimaSaaS',sector:'CleanTech',stage:'Screening',round:'Pre-Seed',arr:'€180K',growth:'95%',team:'6 MA',runway:'12 Monate',cac:'€3.100',ltv:'€9.000',founders:'Jan Hofer (ex-Tesla), Lena Park (Klimawissenschaftlerin)',notes:'CO2-Tracking für Mittelstand. Frühe Traction, aber LTV/CAC knapp. Team sehr stark.',score:'6',rec:'Watch',addedAt:new Date(Date.now()-864e5).toISOString(),deck:''},
+    {id:'d4',name:'WorkAI GmbH',sector:'SaaS',stage:'Pass',round:'Seed',arr:'€220K',growth:'40%',team:'8 MA',runway:'9 Monate',cac:'€5.800',ltv:'€8.000',founders:'Peter Klein (Produktmanager)',notes:'HR-Tech Automatisierung. Wachstum zu langsam, LTV/CAC nicht ausreichend, Team-Gaps.',score:'4',rec:'Pass',addedAt:new Date(Date.now()-14*864e5).toISOString(),deck:''},
+    {id:'d5',name:'Marketplace.io',sector:'Marketplace',stage:'Inbox',round:'Pre-Seed',arr:'',growth:'',team:'4 MA',runway:'',cac:'',ltv:'',founders:'Maria Schulz, Kai Becker',notes:'B2B-Marktplatz für Industriekomponenten. Pitch Deck eingegangen, noch kein erstes Gespräch.',score:'',rec:'Watch',addedAt:new Date().toISOString(),deck:''},
+  ];
+  demos.forEach(d => { if (!startups.find(s => s.id === d.id)) startups.unshift(d); });
+  save();
+  localStorage.setItem('gimic_settings', JSON.stringify(settings));
+  renderDash(); renderTable(); renderWfSelect();
+  showToast('Demo-Daten geladen ✓');
+}
+
+// ── START ──
+init();
+</script>
+</body>
+</html>
